@@ -1,0 +1,6 @@
+board:
+  name: watchy
+  full_name: Watchy
+  vendor: sqfmi
+  socs:
+  - name: esp32
