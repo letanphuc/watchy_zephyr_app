@@ -21,7 +21,36 @@
 		uart-0 = &uart0;
 		watchdog0 = &wdt0;
 		accel0 = &bma423;
+		
+		respin = "/epd_out/res";
+        cspin = "/epd_out/cs";
+        dcpin = "/epd_out/dc";
+        busypin = "/epd_in/busy";
 	};
+
+	epd_out {
+		compatible = "gpio-leds"; 
+        res {
+            gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+            label = "EDP_RES";
+        };
+        cs {
+            gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+            label = "EDP_CS";
+        };
+        dc {
+            gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+            label = "EDP_DC";
+        };
+	};
+
+	epd_in {
+        compatible = "gpio-keys";
+        busy {
+            gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+            label = "EDP_BUSY";
+        };
+    };
 
 	chosen {
 		zephyr,sram = &sram1;
@@ -99,4 +128,13 @@
 		status = "okay";
 		int1-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 	};
+};
+
+// ePD SPI3
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim3_eink>;
+	pinctrl-names = "default";
 };

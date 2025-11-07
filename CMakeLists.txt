@@ -5,4 +5,12 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(hello_world)
 
-target_sources(app PRIVATE src/main.c src/buttons.c src/sensors.c)
+
+include_directories(src/EPD_W21/)
+
+target_sources(app PRIVATE 
+    src/main.c 
+    src/display.c 
+    src/buttons.c 
+    src/sensors.c 
+    src/EPD_W21/EPAPER.c)
