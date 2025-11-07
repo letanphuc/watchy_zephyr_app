@@ -20,6 +20,7 @@
 		sw3 = &user_button_3;
 		uart-0 = &uart0;
 		watchdog0 = &wdt0;
+		accel0 = &bma423;
 	};
 
 	chosen {
@@ -28,6 +29,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
 	};
 
 	gpio_keys {
@@ -72,4 +74,29 @@
 
 &gpio1 {
 	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	sda-gpios = <&gpio0 21 GPIO_OPEN_DRAIN>;
+	scl-gpios = <&gpio0 22 GPIO_OPEN_DRAIN>;
+	pinctrl-0 = <&i2c0_default>;
+	scl-timeout-us = <0>;
+	pinctrl-names = "default";
+
+	bma423: bma423@18 {
+		compatible = "bosch,bma4xx";
+		reg = <0x18>;
+		status = "okay";
+		int1-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+	};
 };
