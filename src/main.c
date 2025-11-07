@@ -5,10 +5,16 @@
  */
 
 #include <stdio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/printk.h>
 
-int main(void)
-{
-	printf("Hello World! %s\n", CONFIG_BOARD_TARGET);
+#include "buttons.h"
 
-	return 0;
+LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
+
+int main(void) {
+  button_init();
+
+  return 0;
 }
