@@ -1,0 +1,56 @@
+From 3fa061d47defd3c6a343434822ab0c1a81695efb Mon Sep 17 00:00:00 2001
+From: phuc <phuc@mijoconnected.com>
+Date: Sun, 9 Nov 2025 14:00:06 +0700
+Subject: [PATCH] Fix: for display of watchy
+
+---
+ drivers/display/ssd16xx.c       | 6 +++---
+ drivers/mipi_dbi/mipi_dbi_spi.c | 4 ++--
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/display/ssd16xx.c b/drivers/display/ssd16xx.c
+index 0b9a3559dd5..6e763ed8196 100644
+--- a/drivers/display/ssd16xx.c
++++ b/drivers/display/ssd16xx.c
+@@ -562,8 +562,8 @@ static void ssd16xx_get_capabilities(const struct device *dev,
+ 	caps->x_resolution = config->width;
+ 	caps->y_resolution = config->height -
+ 			     config->height % EPD_PANEL_NUMOF_ROWS_PER_PAGE;
+-	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10;
+-	caps->current_pixel_format = PIXEL_FORMAT_MONO10;
++	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01;
++	caps->current_pixel_format = PIXEL_FORMAT_MONO01;
+ 	caps->screen_info = SCREEN_INFO_MONO_MSB_FIRST | SCREEN_INFO_EPD;
+ 
+ 	if (data->orientation == DISPLAY_ORIENTATION_NORMAL ||
+@@ -577,7 +577,7 @@ static void ssd16xx_get_capabilities(const struct device *dev,
+ static int ssd16xx_set_pixel_format(const struct device *dev,
+ 				    const enum display_pixel_format pf)
+ {
+-	if (pf == PIXEL_FORMAT_MONO10) {
++	if (pf == PIXEL_FORMAT_MONO01) {
+ 		return 0;
+ 	}
+ 
+diff --git a/drivers/mipi_dbi/mipi_dbi_spi.c b/drivers/mipi_dbi/mipi_dbi_spi.c
+index a62bb416c5f..48c613686ce 100644
+--- a/drivers/mipi_dbi/mipi_dbi_spi.c
++++ b/drivers/mipi_dbi/mipi_dbi_spi.c
+@@ -555,12 +555,12 @@ static int mipi_dbi_spi_reset(const struct device *dev, k_timeout_t delay)
+ 		return -ENOTSUP;
+ 	}
+ 
+-	ret = gpio_pin_set_dt(&config->reset, 1);
++	ret = gpio_pin_set_dt(&config->reset, 0);
+ 	if (ret < 0) {
+ 		return ret;
+ 	}
+ 	k_sleep(delay);
+-	return gpio_pin_set_dt(&config->reset, 0);
++	return gpio_pin_set_dt(&config->reset, 1);
+ }
+ 
+ static int mipi_dbi_spi_release(const struct device *dev,
+-- 
+2.39.5 (Apple Git-154)
+
