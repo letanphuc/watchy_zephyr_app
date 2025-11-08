@@ -21,36 +21,7 @@
 		uart-0 = &uart0;
 		watchdog0 = &wdt0;
 		accel0 = &bma423;
-		
-		respin = "/epd_out/res";
-        cspin = "/epd_out/cs";
-        dcpin = "/epd_out/dc";
-        busypin = "/epd_in/busy";
 	};
-
-	epd_out {
-		compatible = "gpio-leds"; 
-        res {
-            gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
-            label = "EDP_RES";
-        };
-        cs {
-            gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
-            label = "EDP_CS";
-        };
-        dc {
-            gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
-            label = "EDP_DC";
-        };
-	};
-
-	epd_in {
-        compatible = "gpio-keys";
-        busy {
-            gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
-            label = "EDP_BUSY";
-        };
-    };
 
 	chosen {
 		zephyr,sram = &sram1;
@@ -59,9 +30,10 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,display= &ssd16xx_waveshare_epaper_gdeh0154a07;
 	};
 
-	gpio_keys {
+	gpio_keys: gpio_keys {
 		compatible = "gpio-keys";
 
 		user_button_0: button_0 {
@@ -88,6 +60,47 @@
 			zephyr,code = <INPUT_KEY_3>;
 		};
 	};
+
+
+
+	eink_display0: eink_display{
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi3>;
+		dc-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+
+		ssd16xx_waveshare_epaper_gdeh0154a07: ssd16xxfb@0 {
+			compatible = "gooddisplay,gdeh0154a07", "solomon,ssd1681";
+			mipi-max-frequency = <4000000>;
+			reg = <0>;
+			width = <200>;
+			height = <200>;
+			busy-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+			status = "okay";
+
+			tssv = <0x80>;
+
+			full {
+				border-waveform = <0x05>;
+			};
+
+			partial {
+				border-waveform = <0x3c>;
+			};
+		};
+	};
+#if 0
+	lvgl_button_input {
+		compatible = "zephyr,lvgl-button-input";
+		input = <&gpio_keys>;
+		input-codes = <INPUT_KEY_0>;
+		coordinates = <160 120>;
+	};
+#endif
+
 };
 
 &uart0 {

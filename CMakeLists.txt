@@ -12,5 +12,5 @@ target_sources(app PRIVATE
     src/main.c 
     src/display.c 
     src/buttons.c 
-    src/sensors.c 
-    src/EPD_W21/EPAPER.c)
+    src/cat_200x200.c 
+    src/sensors.c)

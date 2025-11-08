@@ -11,5 +11,6 @@ manifest:
         name-allowlist:
           - hal_espressif
           - mbedtls
+          - lvgl
   self:
     path: app

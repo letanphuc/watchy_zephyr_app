@@ -62,7 +62,8 @@
 	spim3_eink: spim3_eink {
 		group1 {
 			pinmux = <SPIM3_MOSI_GPIO23>,
-				 <SPIM3_SCLK_GPIO18>;
+				 <SPIM3_SCLK_GPIO18>,
+				 <SPIM3_CSEL_GPIO5>;
 			output-low;
 		};
 	};

@@ -1,94 +1,49 @@
+/*
+ * Copyright (c) 2018 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <lvgl.h>
+#include <lvgl_input_device.h>
+#include <stdio.h>
+#include <string.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/display.h>
 #include <zephyr/kernel.h>
 
-#include "epaper.h"
-#include "picture.h"
+#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(app, 4);
 
-void gpio_init() {
-  if (!device_is_ready(edp_cs_pin.port) && !device_is_ready(edp_dc_pin.port)) {
-    printk("GPIO port initialization error\n");
-    return;
-  }
-  int ret;
-  ret = gpio_pin_configure_dt(&edp_cs_pin, GPIO_OUTPUT_ACTIVE);
-  if (ret < 0) {
-    return;
-  }
-  ret = gpio_pin_configure_dt(&edp_dc_pin, GPIO_OUTPUT_ACTIVE);
-  if (ret < 0) {
-    return;
-  }
-  ret = gpio_pin_configure_dt(&edp_res_pin, GPIO_OUTPUT_ACTIVE);
-  if (ret < 0) {
-    return;
-  }
-  ret = gpio_pin_configure_dt(&edp_busy_pin, GPIO_INPUT | GPIO_PULL_UP);
-  if (ret < 0) {
-    return;
-  }
+#include "cat_image.h"
 
-  printk("GPIO pins initialized correctly\n");
-  ret = gpio_pin_set_dt(&edp_res_pin, 0);
-  printk("pin reset low: %d\n", ret);
-}
+extern const lv_image_dsc_t cat_200x200;
 
-void display_init(void) {
-  unsigned char fen_L, fen_H, miao_L, miao_H;
-  gpio_init();
+int display_main(void) {
+  LOG_INF("Display main started");
+  const struct device* display = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
+  if (!device_is_ready(display)) {
+    return 0;
+  }
+  LOG_INF("Display is ready");
+
+  lv_obj_set_style_bg_color(lv_screen_active(), lv_color_white(), 0);
+  lv_obj_t* label = lv_label_create(lv_screen_active());
+  LOG_INF("Label created at %p", label);
+  lv_label_set_text(label, "Hello world!");
+  lv_obj_set_style_text_color(label, lv_color_black(), 0);
+  lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 0);
+
+  lv_obj_t* icon = lv_image_create(lv_screen_active());
+  lv_image_set_src(icon, &cat_200x200);
+  lv_obj_align_to(icon, label, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
+
+  LOG_INF("Display blanking off");
 
   while (1) {
-    // Full screen refresh
-    EPD_HW_Init();                  // Electronic paper initialization
-    EPD_WhiteScreen_ALL(gImage_1);  // Refresh the picture in full screen
-    driver_delay_xms(3000);
-    EPD_WhiteScreen_ALL(gImage_2);  // Refresh the picture in full screen
-    driver_delay_xms(3000);
-    EPD_WhiteScreen_ALL(gImage_3);  // Refresh the picture in full screen
-    driver_delay_xms(3000);
-    EPD_WhiteScreen_ALL(gImage_4);  // Refresh the picture in full screen
-    driver_delay_xms(3000);
-
-    //////////////////////Partial refresh digital
-    /// presentation//////////////////////////////////////
-    EPD_HW_Init();                         // Electronic paper initialization
-    EPD_SetRAMValue_BaseMap(gImage_logo);  // Partial refresh background color
-    EPD_Dis_Part(0, 32, gImage_num1, 32, 32);  // x,y,DATA,Resolution 32*32
-    EPD_Dis_Part(0, 32, gImage_num2, 32, 32);  // x,y,DATA,Resolution 32*32
-    EPD_Dis_Part(0, 32, gImage_num3, 32, 32);  // x,y,DATA,Resolution 32*32
-    driver_delay_xms(1000);
-    // Clear screen
-    EPD_HW_Init();            // Electronic paper initialization
-    EPD_WhiteScreen_White();  // Show all white
-
-    //////////////////////Partial refresh time
-    /// demo/////////////////////////////////////
-    EPD_HW_Init();                            // Electronic paper initialization
-    EPD_SetRAMValue_BaseMap(gImage_basemap);  // Partial refresh background
-                                              // color
-    for (fen_H = 0; fen_H < 6; fen_H++) {
-      for (fen_L = 0; fen_L < 10; fen_L++) {
-        for (miao_H = 0; miao_H < 6; miao_H++) {
-          for (miao_L = 0; miao_L < 10; miao_L++) {
-            EPD_Dis_Part_myself(64, 40, Num[miao_L],     // x-A,y-A,DATA-A
-                                64, 72, Num[miao_H],     // x-B,y-B,DATA-B
-                                64, 112, gImage_numdot,  // x-C,y-C,DATA-C
-                                64, 154, Num[fen_L],     // x-D,y-D,DATA-D
-                                64, 186, Num[fen_H], 32,
-                                64);  // x-E,y-E,DATA-E,Resolution 32*64
-
-            if ((fen_L == 0) && (miao_H == 0) && (miao_L == 9)) goto Clear;
-          }
-        }
-      }
-    }
-
-    ////////////////////////////////////////////////////////////////////////
-    // Clear screen
-  Clear:
-    EPD_HW_Init();            // Electronic paper initialization
-    EPD_WhiteScreen_White();  // Show all white
-    EPD_DeepSleep();  // Enter deep sleep,Sleep instruction is necessary, please
-                      // do not delete!!!
-    while (1);
+    uint32_t t = lv_timer_handler();
+    k_sleep(K_MSEC(t));
   }
-  ///////////////////////////////////////////////////////////
 }
