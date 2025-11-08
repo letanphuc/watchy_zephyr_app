@@ -17,6 +17,8 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 
+#include "app/gpio_event.h"
+
 LOG_MODULE_REGISTER(buttons, LOG_LEVEL_INF);
 
 /*
@@ -37,9 +39,25 @@ static const struct gpio_dt_spec buttons[MAX_BUTTONS] = {
     GPIO_DT_SPEC_GET_OR(SW3_NODE, gpios, {0}),
 };
 
-void button_pressed(const struct device *dev, struct gpio_callback *cb,
-                    uint32_t pins) {
-  LOG_INF("Button pressed port = %s pins = 0x%08x", dev->name, pins);
+void button_pressed(const struct device *dev, struct gpio_callback *cb, uint32_t pins) {
+  LOG_INF("Button event port = %s pins = 0x%08x", dev->name, pins);
+
+  // Find which button triggered the interrupt and check its state
+  for (int i = 0; i < MAX_BUTTONS; i++) {
+    const struct gpio_dt_spec *button = &buttons[i];
+    if (button->port == dev && (pins & BIT(button->pin))) {
+      // Read actual button state
+      int val = gpio_pin_get_dt(button);
+      if (val < 0) {
+        LOG_ERR("Failed to read button state: %d", val);
+        continue;
+      }
+
+      // Send event based on actual state (pressed=1, released=0)
+      gpio_button_callback_mapped(button->pin, val == 1);
+      LOG_INF("Button %d %s", i, val == 1 ? "pressed" : "released");
+    }
+  }
 }
 
 int button_init(void) {
@@ -58,15 +76,14 @@ int button_init(void) {
 
     ret = gpio_pin_configure_dt(button, GPIO_INPUT);
     if (ret != 0) {
-      LOG_ERR("Error %d: failed to configure %s pin %d\n", ret,
-              button->port->name, button->pin);
+      LOG_ERR("Error %d: failed to configure %s pin %d\n", ret, button->port->name, button->pin);
       continue;
     }
 
-    ret = gpio_pin_interrupt_configure_dt(button, GPIO_INT_EDGE_TO_ACTIVE);
+    ret = gpio_pin_interrupt_configure_dt(button, GPIO_INT_EDGE_BOTH);
     if (ret != 0) {
-      LOG_ERR("Error %d: failed to configure interrupt on %s pin %d\n", ret,
-              button->port->name, button->pin);
+      LOG_ERR("Error %d: failed to configure interrupt on %s pin %d\n", ret, button->port->name,
+              button->pin);
       continue;
     }
 

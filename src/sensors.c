@@ -12,8 +12,7 @@
 K_SEM_DEFINE(sem, 0, 1); /* starts off "not available" */
 
 #ifdef CONFIG_SAMPLE_TAP_DETECTION
-static void tap_trigger_handler(const struct device *dev,
-                                const struct sensor_trigger *trigger) {
+static void tap_trigger_handler(const struct device *dev, const struct sensor_trigger *trigger) {
   ARG_UNUSED(trigger);
   printf("TAP detected\n");
 
@@ -24,8 +23,7 @@ static void tap_trigger_handler(const struct device *dev,
   k_sem_give(&sem);
 }
 #else
-static void trigger_handler(const struct device *dev,
-                            const struct sensor_trigger *trigger) {
+static void trigger_handler(const struct device *dev, const struct sensor_trigger *trigger) {
   ARG_UNUSED(trigger);
 
   /* Always fetch the sample to clear the data ready interrupt in the
