@@ -67,4 +67,11 @@
 			output-low;
 		};
 	};
+
+	adc0_default: adc0_default {
+		group1 {
+			pinmux = <PB0X_ADC_AD4>,
+				 <PB1X_ADC_AD5>;
+		};
+	};
 };

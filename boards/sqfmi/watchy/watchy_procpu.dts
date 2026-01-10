@@ -21,6 +21,7 @@
 		uart-0 = &uart0;
 		watchdog0 = &wdt0;
 		accel0 = &bma423;
+		rtc = &pcf85063a;
 	};
 
 	chosen {
@@ -141,6 +142,13 @@
 		status = "okay";
 		int1-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 	};
+
+	pcf85063a: pcf85063a@51 {
+		compatible = "nxp,pcf85063a";
+		reg = <0x51>;
+		status = "okay";
+		int1-gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+	};
 };
 
 // ePD SPI3
@@ -150,4 +158,16 @@
 	status = "okay";
 	pinctrl-0 = <&spim3_eink>;
 	pinctrl-names = "default";
+};
+
+
+&adc0 {
+	status = "okay";
+    pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+
+	prescaler = <9>;
+	startup-time = <64>;
+	settling-time = <3>;
+	tracking-time = <2>;
 };

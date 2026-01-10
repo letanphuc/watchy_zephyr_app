@@ -9,8 +9,9 @@ LOG_MODULE_REGISTER(network, LOG_LEVEL_INF);
 #define WIFI_SAMPLE_SSID "mystery 2.4"
 #define WIFI_SAMPLE_PSK "123456Aa@"
 
-#define NET_EVENT_WIFI_MASK \
-  (NET_EVENT_WIFI_CONNECT_RESULT | NET_EVENT_WIFI_DISCONNECT_RESULT)
+#define NET_EVENT_WIFI_MASK                                           \
+  (NET_EVENT_WIFI_CONNECT_RESULT | NET_EVENT_WIFI_DISCONNECT_RESULT | \
+   NET_EVENT_WIFI_IFACE_STATUS)
 
 static struct net_if *sta_iface;
 static struct wifi_connect_req_params sta_config;
@@ -19,6 +20,8 @@ static struct net_mgmt_event_callback cb;
 /* Check necessary definitions */
 BUILD_ASSERT(sizeof(WIFI_SAMPLE_SSID) > 1,
              "WIFI_SAMPLE_SSID is empty. Please set it in conf file.");
+
+static int connect_to_wifi(void);
 
 static void wifi_event_handler(struct net_mgmt_event_callback *cb,
                                uint64_t mgmt_event, struct net_if *iface) {
@@ -29,9 +32,12 @@ static void wifi_event_handler(struct net_mgmt_event_callback *cb,
     }
     case NET_EVENT_WIFI_DISCONNECT_RESULT: {
       LOG_INF("Disconnected from %s", WIFI_SAMPLE_SSID);
+      //   Attempt to reconnect
+      connect_to_wifi();
       break;
     }
     default:
+      LOG_INF("Unhandled WiFi event: %llu", mgmt_event);
       break;
   }
 }

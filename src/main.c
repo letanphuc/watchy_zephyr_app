@@ -43,7 +43,10 @@ static int lvgl_display_init(void) {
   return 0;
 }
 
+extern int rtc_main(void);
 int main(void) {
+  rtc_main();
+  #if 0
   LOG_INF("Starting Watchy Zephyr App with App Framework");
 
   // Initialize button subsystem
@@ -72,6 +75,7 @@ int main(void) {
     }
     k_sleep(K_MSEC(sleep_time));
   }
+    #endif
 
   return 0;
 }
