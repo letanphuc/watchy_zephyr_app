@@ -25,9 +25,11 @@ add_compile_definitions(LV_LVGL_H_INCLUDE_SYSTEM)
 
 target_sources(app PRIVATE 
     src/main.c 
+    src/network.c 
     src/buttons.c 
     src/sensors.c
     src/app/app_manager.c
+    src/app/watchface/watchface_app.c
     src/app/counter/counter_app.c
     src/app/images/images_app.c
     src/app/gpio_event.c

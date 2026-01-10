@@ -18,8 +18,10 @@
 
 extern int sensor_init(void);
 extern void epd_display_init(void);
+extern int init_net(void);
 extern IApp CounterApp;
 extern IApp ImagesApp;
+extern IApp WatchfaceApp;
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
@@ -33,6 +35,8 @@ static int lvgl_display_init(void) {
     return -1;
   }
 
+  display_blanking_off(display);
+
   LOG_INF("Display is ready");
   lv_obj_set_style_bg_color(lv_screen_active(), lv_color_white(), 0);
 
@@ -44,6 +48,7 @@ int main(void) {
 
   // Initialize button subsystem
   button_init();
+  init_net();
 
   // Initialize LVGL display
   if (lvgl_display_init() < 0) {
@@ -51,12 +56,12 @@ int main(void) {
     return -1;
   }
 
-  // Register applications
+  // Register applications (launch watchface by default)
+  app_manager_register(&WatchfaceApp);
   app_manager_register(&ImagesApp);
   app_manager_register(&CounterApp);
 
-  // Launch the first app (CounterApp)
-  LOG_INF("Launching counter app");
+  LOG_INF("Launching watchface app");
   app_manager_launch(0);
 
   // Main event loop
