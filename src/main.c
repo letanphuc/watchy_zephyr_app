@@ -43,15 +43,12 @@ static int lvgl_display_init(void) {
   return 0;
 }
 
-extern int rtc_main(void);
 int main(void) {
-  rtc_main();
-  #if 0
   LOG_INF("Starting Watchy Zephyr App with App Framework");
 
   // Initialize button subsystem
   button_init();
-  init_net();
+  // init_net();
 
   // Initialize LVGL display
   if (lvgl_display_init() < 0) {
@@ -61,21 +58,21 @@ int main(void) {
 
   // Register applications (launch watchface by default)
   app_manager_register(&WatchfaceApp);
-  app_manager_register(&ImagesApp);
-  app_manager_register(&CounterApp);
+  // app_manager_register(&ImagesApp);
+  // app_manager_register(&CounterApp);
 
   LOG_INF("Launching watchface app");
   app_manager_launch(0);
 
   // Main event loop
   while (1) {
+    LOG_DBG("Main loop tick");
     uint32_t sleep_time = lv_timer_handler();
     if (sleep_time >= 1000) {
       sleep_time = 1000;
     }
     k_sleep(K_MSEC(sleep_time));
   }
-    #endif
 
   return 0;
 }

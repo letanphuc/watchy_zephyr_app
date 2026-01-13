@@ -3,9 +3,11 @@
  * @brief Simple watchface displaying current time (hh:mm)
  */
 
-#include <time.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/rtc.h>
 #include <zephyr/logging/log.h>
 
+#include "../../lib/rtc.h"
 #include "../app_interface.h"
 #include "lvgl.h"
 
@@ -14,40 +16,64 @@ LOG_MODULE_REGISTER(watchface_app, LOG_LEVEL_INF);
 static lv_obj_t *hour_label = NULL;
 static lv_obj_t *min_label = NULL;
 static lv_obj_t *colon_label = NULL;
-static lv_obj_t *progress_bar = NULL;
+static lv_obj_t *date_label = NULL;
 static lv_timer_t *update_timer = NULL;
+static const struct device *rtc = NULL;
 
 static void update_time_cb(lv_timer_t *timer) {
   LV_UNUSED(timer);
 
-  if (progress_bar == NULL) {
+  if (hour_label == NULL || rtc == NULL) {
     return;
   }
 
-  time_t now = time(NULL);
-  struct tm *ptm = localtime(&now);
-  if (ptm == NULL) {
+  struct rtc_time tm;
+  int ret = rtc_get_time(rtc, &tm);
+  LOG_DBG("RTC time: %02d:%02d:%02d", tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+  if (ret < 0) {
+    LOG_ERR("Failed to get RTC time: %d", ret);
     return;
   }
-  struct tm tm_now = *ptm;
 
   // Update hour and minute labels
   if (hour_label && min_label) {
-    lv_label_set_text_fmt(hour_label, "%02d", tm_now.tm_hour);
-    lv_label_set_text_fmt(min_label, "%02d", tm_now.tm_min);
+    lv_label_set_text_fmt(hour_label, "%02d", tm.tm_hour);
+    lv_label_set_text_fmt(min_label, "%02d", tm.tm_min);
   }
-  
-  // Toggle colon visibility based on seconds (blink effect)
-  if (colon_label) {
-    lv_obj_set_style_opa(colon_label, (tm_now.tm_sec % 2 == 0) ? LV_OPA_COVER : LV_OPA_TRANSP, 0);
+
+  // Update date label
+  if (date_label) {
+    const char *months[] = {"January",   "February", "March",    "April",
+                            "May",       "June",     "July",     "August",
+                            "September", "October",  "November", "December"};
+    const char *month_name = months[tm.tm_mon];
+
+    // Format: "Month Dth Year" (e.g., "March 3rd 2021")
+    const char *suffix = "th";
+    int day = tm.tm_mday;
+    if (day % 10 == 1 && day != 11) {
+      suffix = "st";
+    } else if (day % 10 == 2 && day != 12) {
+      suffix = "nd";
+    } else if (day % 10 == 3 && day != 13) {
+      suffix = "rd";
+    }
+
+    lv_label_set_text_fmt(date_label, "%s %d%s %d", month_name, day, suffix,
+                          tm.tm_year + 1900);
   }
-  
-  // Update progress bar (0-59 seconds)
-  lv_bar_set_value(progress_bar, tm_now.tm_sec, LV_ANIM_OFF);
 }
 
 static void watchface_app_init(void) {
   LOG_INF("Watchface app init");
+
+  // Get RTC device
+  rtc = DEVICE_DT_GET(DT_ALIAS(rtc));
+  if (!device_is_ready(rtc)) {
+    LOG_ERR("RTC device not ready");
+    rtc = NULL;
+  }
 
   // Clean screen and set a white background
   lv_obj_clean(lv_scr_act());
@@ -55,32 +81,35 @@ static void watchface_app_init(void) {
   // Style: larger font for readability
   static lv_style_t style;
   lv_style_init(&style);
-  lv_style_set_text_font(&style, &lv_font_montserrat_24);
+  lv_style_set_text_font(&style, &lv_font_montserrat_48);
 
   // Create hour label
   hour_label = lv_label_create(lv_scr_act());
   lv_label_set_text(hour_label, "--");
-  lv_obj_align(hour_label, LV_ALIGN_CENTER, -20, -10);
+  lv_obj_align(hour_label, LV_ALIGN_CENTER, -50, -20);
   lv_obj_add_style(hour_label, &style, 0);
 
   // Create colon separator (will toggle)
   colon_label = lv_label_create(lv_scr_act());
   lv_label_set_text(colon_label, ":");
-  lv_obj_align(colon_label, LV_ALIGN_CENTER, 0, -10);
+  lv_obj_align(colon_label, LV_ALIGN_CENTER, 0, -20);
   lv_obj_add_style(colon_label, &style, 0);
 
   // Create minute label
   min_label = lv_label_create(lv_scr_act());
   lv_label_set_text(min_label, "--");
-  lv_obj_align(min_label, LV_ALIGN_CENTER, 20, -10);
+  lv_obj_align(min_label, LV_ALIGN_CENTER, 50, -20);
   lv_obj_add_style(min_label, &style, 0);
 
-  // Create progress bar for seconds (0-59)
-  progress_bar = lv_bar_create(lv_scr_act());
-  lv_obj_set_size(progress_bar, 150, 10);
-  lv_obj_align(progress_bar, LV_ALIGN_CENTER, 0, 20);
-  lv_bar_set_range(progress_bar, 0, 59);
-  lv_bar_set_value(progress_bar, 0, LV_ANIM_OFF);
+  // Create date label
+  date_label = lv_label_create(lv_scr_act());
+  lv_label_set_text(date_label, "---- -- ----");
+  lv_obj_align(date_label, LV_ALIGN_CENTER, 0, 50);
+
+  static lv_style_t date_style;
+  lv_style_init(&date_style);
+  lv_style_set_text_font(&date_style, &lv_font_montserrat_16);
+  lv_obj_add_style(date_label, &date_style, 0);
 
   // Update immediately, then every second
   update_time_cb(NULL);
@@ -97,7 +126,8 @@ static void watchface_app_deinit(void) {
   hour_label = NULL;
   min_label = NULL;
   colon_label = NULL;
-  progress_bar = NULL;
+  date_label = NULL;
+  rtc = NULL;
 }
 
 static void watchface_app_handle_event(input_event_t *ev) {

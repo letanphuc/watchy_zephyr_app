@@ -66,6 +66,7 @@ void app_manager_launch(uint8_t index) {
     LOG_INF("Initializing app at index %d", index);
     manager.active->init();
   }
+  LOG_INF("Launched app at index %d", index);
 }
 
 void app_manager_handle_event(input_event_t *ev) {

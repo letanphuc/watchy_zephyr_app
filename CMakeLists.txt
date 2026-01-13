@@ -29,7 +29,7 @@ target_sources(app PRIVATE
     src/buttons.c 
     src/battery.c 
     src/sensors.c
-    src/rtc.c
+    src/lib/rtc.c
     src/app/app_manager.c
     src/app/watchface/watchface_app.c
     src/app/counter/counter_app.c

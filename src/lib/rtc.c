@@ -1,19 +1,15 @@
-/*
- * Copyright (c) 2024, Muhammad Waleed Badar
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
 #include <zephyr/device.h>
 #include <zephyr/drivers/rtc.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
+
+#include "rtc.h"
 LOG_MODULE_REGISTER(rtc_app, 4);
 
 const struct device* const rtc = DEVICE_DT_GET(DT_ALIAS(rtc));
 
-static int set_date_time(const struct device* rtc) {
+int set_date_time(const struct device* rtc) {
   int ret = 0;
   struct rtc_time tm = {
       .tm_year = 2024 - 1900,
@@ -32,7 +28,7 @@ static int set_date_time(const struct device* rtc) {
   return ret;
 }
 
-static int get_date_time(const struct device* rtc) {
+int get_date_time(const struct device* rtc) {
   int ret = 0;
   struct rtc_time tm;
 
