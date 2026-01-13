@@ -22,6 +22,9 @@
 		watchdog0 = &wdt0;
 		accel0 = &bma423;
 		rtc = &pcf85063a;
+
+		batt-adc = &adc1;
+		batt-adc-channel = &adc1_channel6;
 	};
 
 	chosen {
@@ -161,13 +164,17 @@
 };
 
 
-&adc0 {
-	status = "okay";
-    pinctrl-0 = <&adc0_default>;
-	pinctrl-names = "default";
+&adc1 {
+    status = "okay";
+	#address-cells = <1>;
+    #size-cells = <0>;
 
-	prescaler = <9>;
-	startup-time = <64>;
-	settling-time = <3>;
-	tracking-time = <2>;
+    adc1_channel6: channel@6 {
+        reg = <0x6>; /* ADC1_CH6 */
+        zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,vref-mv = <3894>;
+        zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+        zephyr,resolution = <12>;
+    };
 };

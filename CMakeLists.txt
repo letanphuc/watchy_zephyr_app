@@ -27,6 +27,7 @@ target_sources(app PRIVATE
     src/main.c 
     src/network.c 
     src/buttons.c 
+    src/battery.c 
     src/sensors.c
     src/rtc.c
     src/app/app_manager.c
