@@ -15,6 +15,7 @@
 #include "app/app_interface.h"
 #include "app/app_manager.h"
 #include "buttons.h"
+#include "lib/ancs.h"
 
 extern int sensor_init(void);
 extern void epd_display_init(void);
@@ -43,8 +44,30 @@ static int lvgl_display_init(void) {
   return 0;
 }
 
+void on_new_notification(const struct ancs_notification *notif) {
+  LOG_INF("New Notification:");
+  LOG_INF("  UID: 0x%x", notif->source.notification_uid);
+  LOG_INF("  App ID: %s", notif->app_identifier);
+  LOG_INF("  Title: %s", notif->title);
+  LOG_INF("  Subtitle: %s", notif->subtitle);
+  LOG_INF("  Message: %s", notif->message);
+  LOG_INF("  Date: %s", notif->date);
+  LOG_INF("  Positive Action: %s", notif->positive_action_label);
+}
+void on_notification_removed(uint32_t uid) {
+  LOG_INF("Notification Removed: UID=0x%x", uid);
+}
+struct ancs_callbacks ancs_cbs = {
+    .on_new_notification = on_new_notification,
+    .on_notification_removed = on_notification_removed,
+};
+
 int main(void) {
   LOG_INF("Starting Watchy Zephyr App with App Framework");
+
+  // Initialize ANCS client
+  ancs_client_init();
+  ancs_register_cb(&ancs_cbs);
 
   // Initialize button subsystem
   button_init();

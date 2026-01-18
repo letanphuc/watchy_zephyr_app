@@ -83,11 +83,19 @@ static void watchface_app_init(void) {
   lv_style_init(&style);
   lv_style_set_text_font(&style, &lv_font_montserrat_48);
 
-  // Create hour label
+  // Create hour label with black background and white text
   hour_label = lv_label_create(lv_scr_act());
   lv_label_set_text(hour_label, "--");
   lv_obj_align(hour_label, LV_ALIGN_CENTER, -50, -20);
   lv_obj_add_style(hour_label, &style, 0);
+  
+  static lv_style_t hour_style;
+  lv_style_init(&hour_style);
+  lv_style_set_bg_color(&hour_style, lv_color_black());
+  lv_style_set_bg_opa(&hour_style, LV_OPA_COVER);
+  lv_style_set_text_color(&hour_style, lv_color_white());
+  lv_style_set_pad_all(&hour_style, 8);
+  lv_obj_add_style(hour_label, &hour_style, 0);
 
   // Create colon separator (will toggle)
   colon_label = lv_label_create(lv_scr_act());

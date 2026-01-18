@@ -86,6 +86,7 @@
 			status = "okay";
 
 			tssv = <0x80>;
+			rotation = <270>;
 
 			full {
 				border-waveform = <0x05>;
