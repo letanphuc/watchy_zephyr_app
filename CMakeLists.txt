@@ -32,6 +32,24 @@ lvgl_add_font(
     RANGE "0x30-0x3A"
 )
 
+# Convert Vietnamese font for notifications if the source is available
+set(VIETNAMESE_FONT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/fonts/NotoSans_Condensed-Medium.ttf")
+if(EXISTS "${VIETNAMESE_FONT_FILE}")
+    lvgl_add_font(
+        FONT_FILE ${VIETNAMESE_FONT_FILE}
+        SIZE 20
+        BPP 4
+        FORMAT lvgl
+        RANGE "0x0020-0x007F,0x00A0-0x00FF,0x0102,0x0103,0x0110,0x0111,0x0128,0x0129,0x0168,0x0169,0x01A0,0x01A1,0x01AF,0x01B0,0x1EA0-0x1EF9"
+        OUTPUT_NAME font_vi_20
+        NO_COMPRESS
+        NO_PREFILTER
+    )
+    target_compile_definitions(app PRIVATE HAS_FONT_VI_20)
+else()
+    message(WARNING "NotoSans_Condensed-Medium.ttf not found; skipping Vietnamese font generation")
+endif()
+
 add_compile_definitions(LV_LVGL_H_INCLUDE_SIMPLE)
 
 target_sources(app PRIVATE 
@@ -47,6 +65,7 @@ target_sources(app PRIVATE
     src/app/watchface/watchface_app.c
     src/app/watchface/segments_wf_app.c
     src/app/counter/counter_app.c
+    src/app/notification/notification_app.c
     src/app/images/images_app.c
     src/app/gpio_event.c
     ${LVGL_IMAGE_SOURCES}

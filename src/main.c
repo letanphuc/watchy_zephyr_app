@@ -24,6 +24,7 @@ extern IApp CounterApp;
 extern IApp ImagesApp;
 extern IApp WatchfaceApp;
 extern IApp SegmentsWatchfaceApp;
+extern IApp NotificationApp;
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
@@ -81,8 +82,9 @@ int main(void) {
   }
 
   // Register applications (launch segments watchface by default)
-  app_manager_register(&SegmentsWatchfaceApp);
-  app_manager_register(&WatchfaceApp);
+  // app_manager_register(&SegmentsWatchfaceApp);
+  // app_manager_register(&WatchfaceApp);
+  app_manager_register(&NotificationApp);
   // app_manager_register(&ImagesApp);
   // app_manager_register(&CounterApp);
 
