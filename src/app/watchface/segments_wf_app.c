@@ -7,6 +7,7 @@
 #include <zephyr/drivers/rtc.h>
 #include <zephyr/logging/log.h>
 
+#include "../../lib/ancs.h"
 #include "../../lib/rtc.h"
 #include "../app_interface.h"
 #include "lvgl.h"
@@ -15,6 +16,7 @@ LOG_MODULE_REGISTER(segments_wf_app, LOG_LEVEL_INF);
 
 // Declare the generated seven segments font
 LV_FONT_DECLARE(seven_segments_64);
+LV_FONT_DECLARE(font_vi_20);
 
 static lv_obj_t *hour_label = NULL;
 static lv_obj_t *min_label = NULL;
@@ -22,6 +24,8 @@ static lv_obj_t *colon_label = NULL;
 static lv_obj_t *date_label = NULL;
 static lv_obj_t *weekday_rects[7] = {NULL};
 static lv_timer_t *update_timer = NULL;
+static lv_timer_t *notification_timer = NULL;
+static lv_obj_t *notification_box = NULL;
 static const struct device *rtc = NULL;
 
 static void update_time_cb(lv_timer_t *timer) {
@@ -163,11 +167,32 @@ static void segments_wf_app_init(void) {
   update_timer = lv_timer_create(update_time_cb, 1000, NULL);
 }
 
+static void hide_notification_cb(lv_timer_t *timer) {
+  LV_UNUSED(timer);
+  LOG_INF("Hiding notification box");
+  if (notification_box) {
+    lv_obj_del(notification_box);
+    notification_box = NULL;
+    LOG_DBG("Notification box deleted");
+  }
+  if (notification_timer) {
+    notification_timer = NULL;
+  }
+}
+
 static void segments_wf_app_deinit(void) {
   LOG_INF("Segments watchface app deinit");
   if (update_timer) {
     lv_timer_del(update_timer);
     update_timer = NULL;
+  }
+  if (notification_timer) {
+    lv_timer_del(notification_timer);
+    notification_timer = NULL;
+  }
+  if (notification_box) {
+    lv_obj_del(notification_box);
+    notification_box = NULL;
   }
   lv_obj_clean(lv_scr_act());
   hour_label = NULL;
@@ -181,8 +206,98 @@ static void segments_wf_app_deinit(void) {
 }
 
 static void segments_wf_app_handle_event(input_event_t *ev) {
-  LV_UNUSED(ev);
-  // No input handling needed for simple watchface
+  if (!ev) {
+    return;
+  }
+
+  // Handle new notification event
+  if (ev->type == INPUT_EVENT_TYPE_NOTIFICATION &&
+      ev->code == INPUT_NOTIFICATION_NEW) {
+    LOG_INF("New notification received");
+
+    const struct ancs_notification *notif =
+        (const struct ancs_notification *)ev->data;
+    if (!notif) {
+      LOG_WRN("Notification data is NULL");
+      return;
+    }
+
+    LOG_INF("Notification title: %s", notif->title ? notif->title : "(null)");
+    LOG_INF("Notification message: %s", notif->message ? notif->message : "(null)");
+
+    // Remove existing notification if any
+    if (notification_timer) {
+      lv_timer_del(notification_timer);
+      notification_timer = NULL;
+      LOG_DBG("Deleted existing notification timer");
+    }
+    if (notification_box) {
+      lv_obj_del(notification_box);
+      notification_box = NULL;
+      LOG_DBG("Deleted existing notification box");
+    }
+
+    // Create notification overlay box
+    // Get display width and calculate box width (display_width - 40 for 20px margins)
+    lv_disp_t *display = lv_disp_get_default();
+    int32_t display_width = lv_disp_get_hor_res(display);
+    int32_t box_width = display_width - 40;
+
+    LOG_INF("Creating notification box: width=%d, height=120", box_width);
+
+    notification_box = lv_obj_create(lv_scr_act());
+    lv_obj_set_size(notification_box, box_width, 120);
+    lv_obj_align(notification_box, LV_ALIGN_CENTER, 0, 0);
+    
+    // Move notification box to foreground to ensure it's on top
+    lv_obj_move_foreground(notification_box);
+
+    // Style: rounded rectangle with white background and black border
+    static lv_style_t notification_style;
+    lv_style_init(&notification_style);
+    lv_style_set_bg_color(&notification_style, lv_color_white());
+    lv_style_set_bg_opa(&notification_style, LV_OPA_COVER);
+    lv_style_set_radius(&notification_style, 10);
+    lv_style_set_border_width(&notification_style, 2);
+    lv_style_set_border_color(&notification_style, lv_color_black());
+    lv_style_set_pad_all(&notification_style, 12);
+    lv_obj_add_style(notification_box, &notification_style, 0);
+
+    // Create label for notification text
+    lv_obj_t *noti_label = lv_label_create(notification_box);
+    lv_label_set_long_mode(noti_label, LV_LABEL_LONG_WRAP);
+    lv_obj_set_width(noti_label, box_width - 24);
+    lv_obj_align(noti_label, LV_ALIGN_CENTER, 0, 0);
+
+    // Display notification content
+    if (notif->title && notif->message) {
+      lv_label_set_text_fmt(noti_label, "%s\n%s", notif->title, notif->message);
+    } else if (notif->title) {
+      lv_label_set_text(noti_label, notif->title);
+    } else if (notif->message) {
+      lv_label_set_text(noti_label, notif->message);
+    } else {
+      lv_label_set_text(noti_label, "New Notification");
+    }
+
+    LOG_INF("Notification label created with text");
+
+    // Style text label - black text with font_vi_20
+    static lv_style_t noti_text_style;
+    lv_style_init(&noti_text_style);
+    lv_style_set_text_color(&noti_text_style, lv_color_black());
+    lv_style_set_text_align(&noti_text_style, LV_TEXT_ALIGN_CENTER);
+    lv_style_set_text_font(&noti_text_style, &font_vi_20);
+    lv_obj_add_style(noti_label, &noti_text_style, 0);
+
+    // Mark the screen as dirty to force a redraw
+    lv_obj_invalidate(lv_scr_act());
+    
+    LOG_INF("Notification box displayed, will hide in 10 seconds");
+
+    // Set timer to hide notification after 10 seconds
+    notification_timer = lv_timer_create(hide_notification_cb, 10000, NULL);
+  }
 }
 
 IApp SegmentsWatchfaceApp = {

@@ -47,6 +47,7 @@ static int lvgl_display_init(void) {
 }
 
 void on_new_notification(const struct ancs_notification *notif) {
+  static uint32_t last_notification_uid = 0xffffffff;
   LOG_INF("New Notification:");
   LOG_INF("  UID: 0x%x", notif->source.notification_uid);
   LOG_INF("  App ID: %s", notif->app_identifier);
@@ -55,6 +56,18 @@ void on_new_notification(const struct ancs_notification *notif) {
   LOG_INF("  Message: %s", notif->message);
   LOG_INF("  Date: %s", notif->date);
   LOG_INF("  Positive Action: %s", notif->positive_action_label);
+
+  if (last_notification_uid == notif->source.notification_uid) {
+    LOG_INF("Duplicate notification UID, ignoring");
+    return;
+  }
+
+  last_notification_uid = notif->source.notification_uid;
+  // Send notification event to active watchface
+  input_event_t event = {.type = INPUT_EVENT_TYPE_NOTIFICATION,
+                         .code = INPUT_NOTIFICATION_NEW,
+                         .data = (void *)notif};
+  app_manager_handle_event(&event);
 }
 void on_notification_removed(uint32_t uid) {
   LOG_INF("Notification Removed: UID=0x%x", uid);
@@ -82,9 +95,9 @@ int main(void) {
   }
 
   // Register applications (launch segments watchface by default)
-  // app_manager_register(&SegmentsWatchfaceApp);
+  app_manager_register(&SegmentsWatchfaceApp);
   // app_manager_register(&WatchfaceApp);
-  app_manager_register(&NotificationApp);
+  // app_manager_register(&NotificationApp);
   // app_manager_register(&ImagesApp);
   // app_manager_register(&CounterApp);
 
