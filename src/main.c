@@ -23,6 +23,7 @@ extern int init_net(void);
 extern IApp CounterApp;
 extern IApp ImagesApp;
 extern IApp WatchfaceApp;
+extern IApp SegmentsWatchfaceApp;
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
@@ -79,12 +80,13 @@ int main(void) {
     return -1;
   }
 
-  // Register applications (launch watchface by default)
+  // Register applications (launch segments watchface by default)
+  app_manager_register(&SegmentsWatchfaceApp);
   app_manager_register(&WatchfaceApp);
   // app_manager_register(&ImagesApp);
   // app_manager_register(&CounterApp);
 
-  LOG_INF("Launching watchface app");
+  LOG_INF("Launching segments watchface app");
   app_manager_launch(0);
 
   // Main event loop

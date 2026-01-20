@@ -8,6 +8,9 @@ project(hello_world)
 # Include LVGL image conversion function
 include(cmake/lvgl_image.cmake)
 
+# Include LVGL font conversion function
+include(cmake/lvgl_font.cmake)
+
 include_directories(src/EPD_W21/)
 include_directories(src/)
 
@@ -21,7 +24,15 @@ if(IMAGE_FILES)
     )
 endif()
 
-add_compile_definitions(LV_LVGL_H_INCLUDE_SYSTEM)
+# Convert seven segments font with number characters and colon
+lvgl_add_font(
+    FONT_FILE fonts/seven_segments.ttf
+    SIZE 64
+    BPP 1
+    RANGE "0x30-0x3A"
+)
+
+add_compile_definitions(LV_LVGL_H_INCLUDE_SIMPLE)
 
 target_sources(app PRIVATE 
     src/main.c 
@@ -29,10 +40,12 @@ target_sources(app PRIVATE
     src/buttons.c 
     src/battery.c 
     src/sensors.c
+    ${LVGL_FONT_SOURCES}
     src/lib/rtc.c
     src/lib/ancs.c
     src/app/app_manager.c
     src/app/watchface/watchface_app.c
+    src/app/watchface/segments_wf_app.c
     src/app/counter/counter_app.c
     src/app/images/images_app.c
     src/app/gpio_event.c
